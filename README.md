@@ -1,10 +1,47 @@
 # GNC_to_the_moon
-In-house developed Guidance Navigation Control software libraries!
+In-house developed Guidance, Navigation, and Control software libraries! 
 
-# Goal of this project:
-- Write accurate analytically derived numerical simulation for the system dynamics for accurate dead reckonning in case of abnormal behavior of the state estimation system.
+### 1. Guidance
+This piece of software will be able to calculate optimal trajectories for different missions(both orbital and non-orbital). We will call its final output as the ___desired path___.<br>
+<u>__Note:__</u>These calculations will be done on the ground systems and not on the avionics. However, the output will be statically fed in the onboard avionics memory before the mission.
 
-For a given set of initial conditions:
+### 2. Navigation
+This piece of software will be using the noisy, meaningless voltage values from onboard sensors and will be able to reproduce a sense of current position and orientation during flight. 
+<br>
+- It'll include a sensor fusion algorithm to fight noise(like `Band Pass Filter`) at an individual sensor level. 
+- For state estimation currently we have decided to develop `Particle Filter` algorithm.
+<br>
+<u>__Note:__</u> Unlike gaussian assumption based kalman filters, particle filter algorithm is more generealized and adaptable.
+
+### 3. Control
+The whole system should then be able to conduct a mission autonomously. Goal of this software will be to dynamically generate control values for actuators(to control the thrust direction) keep/bring the rocket close to the ___desired path___.
+
+We have opted to develop Model `Predictive Control Algorithm`. 
+However there're three parts to it:
+
+- __Analytically Modelling the System Dynamics:__
+    - Newtonian Physics : Independent variables(updating from Navigation code).
+    - OpenFOAM Computational Fluid Dynamics(CFD) : CFD simulations on the 3D model to get $C_D$ values for a grid of different($\vec{V}, \hat{n},\rho_{air}$) values.
+- __Model Predictive Control:__
+  - Linear Algebraic structures abstracts away all the system dynamics and helps us calculate a loss function between desired and the (current + predicted) trajectory. It then spits out control values which can then minimize the loss function.
+<br><u>Note:</u> Unlike the heuristical control algorithms like PID we opted `Model Predictive control`, which is an optimal control algorithm(meaning instead of sticking to a fixed logic, it can adapt the itself to the changing environment) 
+
+- __Reinforcement Learning:__ 
+  - In MPC, the weight matrices of the loss function are not analytically derived. Instead, they're traditionally populated with hit and try values, which are quite low(only because there're a high number of values that contributes to the loss so individual contributions needs to be quite small).
+  - These weight values clearly affect the control performance. Hence good Reinforcement Learning can tune these weights. It will really make a difference! 
+  However, that will be a naieve thing to do. Why, you might ask! If the underlying system modeling is the limiting factor for your control system then the weight matrices of the loss function cannot help much! At max you can tune the tradeoff between:
+    - Higher position weights (Q) → Better tracking but more aggressive control
+    - Higher input weights (R) → Smoother control but worse tracking
+    To be fair, the results of this approach are unknown because no one had ever tried it before!
+
+  - On the other hand, imagine a  Actor-Critic model architecture of reinforcement learning could also be used. It
+<br><u>__Note:__</u> Do not confuse them with typical deep/machine learning, there we 
+
+
+## Overall Goal:
+Write accurate analytically derived numerical simulation for the system dynamics for accurate dead reckonning in case of abnormal behavior of the state estimation system.
+
+<u>For a given set of initial conditions:</u>
 - The State of the Rocket should be accurately and precisely measured at every time step.
 - Guidance should be generated dynamically for a specifically designed mission. Unexpected conditions should be handled.
 - The control system should be able to send actuation values to the thrust vectoring system in order to send a rocket to the moon.
