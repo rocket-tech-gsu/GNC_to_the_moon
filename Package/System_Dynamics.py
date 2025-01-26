@@ -3,7 +3,7 @@ from math import cos, sin
 import state_estimator
 
 class Rocket:
-    def __init__(self, Thrust, Mass, Icm, I_axis, Length, Dia, X_CM, X_CP, Pressure_Profile, C_Drag, CS_area_1, CS_area_2, **args):
+    def __init__(self, total_steps, Thrust, Mass, Icm, I_axis, Length, Dia, X_CM, X_CP, Pressure_Profile, C_Drag, CS_area_1, CS_area_2, **args):
         """
         Note: This class simulates the atmospheric interactions, propulsion system, kinematics, and gravitation with a decent precision and accuracy over smaller time scales.
         Caution: Take the results with a grain of salt, the performance is yet to be quantized. A series of test flights might be required to tune some of the constants.
@@ -37,9 +37,9 @@ class Rocket:
         self.CS_area_2 = CS_area_2
 
         # Time steps & resolution:
-        self.N = 0
+        self.N = total_steps
         self.dt = 0
-        self.clock = 0  # If use update() -> increment the `clock` by 1 for internal time(step) keeping.
+        self.clock = 0  # If you want to use update() -> increment the `clock` by 1 for internal time(step) keeping.
         self.validate_time_step()
 
         # Translational Position(x)
@@ -145,27 +145,27 @@ class Rocket:
     def dynamics(self):
         """ Function that simulates all the physics equations:"""
         
-        """ Functions for A-Matrix """
+        """ Returns A-Matrix """
         # Translational Coordinates
         def f1(self, current):
             new = current + self.x4 * self.dt
-            return new
+            return new/current
         def f2(self, current):
             new = current + self.x5 * self.dt
-            return new
+            return new/current
         def f3(self, current):
             new = current + self.x6 * self.dt
-            return new
+            return new/current
         # Translational Velocities:
         def f4(self, current):
             new = current + self.x7 * self.dt
-            return new
+            return new/current
         def f5(self, current):
             new = current + self.x8 * self.dt
-            return new
+            return new/current
         def f6(self, current):
             new = current + self.x9 * self.dt
-            return new
+            return new/current
         # Translational Accelerations:
         def f7(self):   # a_x
             new = (1/self.Mass[self.clock]) * (thrust_vector_U[0] - state_estimator.state_estimation(self.clock)["x4"] * ((self.Mass[self.clock] - self.Mass[self.clock-1]) / self.dt) + drag_force[0])  # thrust_vector_U -> at the current timestep k
@@ -200,17 +200,16 @@ class Rocket:
             return new
         # Angular Accelerations:
         def f16(self):
-            new = (1/self.Icm[self.clock]) * (thrust_torque()[0] + drag_torque[0] - state_estimator.state_estimation(self.clock)["x13"] * ((self.Icm[self.clock] - self.Icm[self.clock-1]) / self.dt))  # TODO: verify that: self.thrust_torque()[0] = torque about the first axis.
+            new = (1/self.Icm[self.clock]) * (self.thrust_torque()[0] + self.drag_torque[0] - state_estimator.state_estimation(self.clock)["x13"] * ((self.Icm[self.clock] - self.Icm[self.clock-1]) / self.dt))  # TODO: verify that: self.thrust_torque()[0] = torque about the first axis.
             return new
         def f17(self):
-            new = (1/self.Icm[self.clock]) * (thrust_torque()[1] + drag_torque[1] - state_estimator.state_estimation(self.clock)["x14"] * ((self.Icm[self.clock] - self.Icm[self.clock-1]) / self.dt))
+            new = (1/self.Icm[self.clock]) * (self.thrust_torque()[1] + self.drag_torque[1] - state_estimator.state_estimation(self.clock)["x14"] * ((self.Icm[self.clock] - self.Icm[self.clock-1]) / self.dt))
             return new
         def f18(self):
-            new = (1/self.Icm[self.clock]) * (thrust_torque()[2] + drag_torque[2] - state_estimator.state_estimation(self.clock)["x15"] * ((self.Iaxis[self.clock] - self.Iaxis[self.clock-1]) / self.dt))
+            new = (1/self.Icm[self.clock]) * (self.thrust_torque()[2] + self.drag_torque[2] - state_estimator.state_estimation(self.clock)["x15"] * ((self.Iaxis[self.clock] - self.Iaxis[self.clock-1]) / self.dt))
             return new
         
         """ Functions for B-Matrix """
-        
         def g(self):
             alpha_1 = np.cross(self.r_vector, self.Thrust_vec) / ( self.Icm[self.clock] * self.n_thrust[0])
             alpha_2 = np.cross(self.r_vector, self.Thrust_vec) / ( self.Icm[self.clock] * self.n_thrust[1])
@@ -234,13 +233,12 @@ class Rocket:
         # Thrust & Drag Torques:
         def thrust_torque(self):
             r = (self.Length - self.X_CM) * self.n_rocket    # in the direction of rocket
-            thrust_torque = np.cross(r, self.thrust_vector_U)
+            self.thrust_torque = np.cross(r, self.thrust_vector_U)
             return thrust_torque
         def drag_torque(self):
             r = np.mod(self.X_CP - self.X_)
-            drag_torque = np.cross(r, self.drag_force())
-            return drag_torque
-        
+            self.drag_torque = np.cross(r, self.drag_force())
+            return self.drag_torque
         
         """Updating Area and Orientation Vectors"""
         def update_n_thrust(self):
@@ -269,14 +267,12 @@ class Rocket:
             A1 = self.CS_area_1 * np.array()    # Along the rocket's x axis
             A2 = self.CS_area_1 * np.array()    # Along the rocket's y axis
             A3 = self.CS_area_2 * np.array()    # Along the rocket's z axis
-            A_sum = A1 + A2 + A3
-            self.CS_area_vec = np.dot(A_sum, self.n_velocity)
+            self.A_sum = A1 + A2 + A3
+            self.CS_area_vec = np.dot(self.A_sum, self.n_velocity)
             return self.CS_area_vec
 
-
         """Finally:"""
-        def A_matrix(self, time_step):
-            return np.diag([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18])
+        return np.diag([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18])
 
     
     def B_matrix(self):
