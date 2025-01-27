@@ -167,7 +167,7 @@ class ParticleFilter:
                     new_weight
                 ]))
         self.n_particles = new_n_particles
-        self.particles = new_particles
+        self.particles[current_time] = new_particles # TODO: Structure of particles class structure needs to be changed ig, make things compatible
         
 class Visualization:
     def __init__(self):
