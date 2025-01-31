@@ -178,7 +178,17 @@ class Visualization:
         """
         pass
 
-def main():    
+def main():
+    dt = 0.01
+    a1,a2,a3 = 1,1,1
+    dummy_A_matrix = np.ndarray(np.array([1,0,0,dt,0,0]),
+                                np.array([0,1,0,0,dt,0]),
+                                np.array([0,0,1,0,0,dt]),
+                                np.array([1,0,0,a1,0,0]),
+                                np.array([0,1,0,0,a2,0]),
+                                np.array([0,0,1,0,0,a3]),
+                                )
+
     n_steps = 10000
     rocket = Rocket(n_steps)
     gps_sensor = GPS(4000, n_steps)
@@ -187,8 +197,9 @@ def main():
     for t in range(0, n_steps):
         rocket.clock += 1
         # Particles
-        particle_filter.state_progression(t, rocket.dynamics())
-        file = open("particles.csv", mode="w") 
+        # particle_filter.state_progression(t, rocket.dynamics())   # Can't use this rn, because dynamics isn't debugged.
+        particle_filter.state_progression(t, dummy_A_matrix)        # 
+        file = open("particles.csv", mode="w")
         file.writelines(f"{particle_filter.particles[t]}")
         # GPS coordinates simulation
         gps_coodinates = gps_sensor.simulate_gps(t)
