@@ -273,7 +273,12 @@ class Rocket:
 
         """Finally:"""
         return np.diag([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18])
-
+    
+    def g(self):
+        alpha_1 = np.cross(self.r_vector, self.Thrust_vec) / ( self.Icm[self.clock] * self.n_thrust[0])
+        alpha_2 = np.cross(self.r_vector, self.Thrust_vec) / ( self.Icm[self.clock] * self.n_thrust[1])
+        alpha_3 = np.cross(self.r_vector, self.Thrust_vec) / ( self.I_axis[self.clock] * self.n_thrust[2])
+        return [alpha_1,alpha_2,alpha_3]
     
     def B_matrix(self):
         B_matrix = np.zeros((18,3))
