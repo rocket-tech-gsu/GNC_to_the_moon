@@ -1,4 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:/Users/varunahlawat/Work/GNC_to_moon/GNC_to_the_moon/Package/media/videos/StateVisual/480p15/partial_movie_files/SquareToCircle/1185818338_468798911_223132457.mp4'
-file 'file:/Users/varunahlawat/Work/GNC_to_moon/GNC_to_the_moon/Package/media/videos/StateVisual/480p15/partial_movie_files/SquareToCircle/624642324_1772076266_3256495558.mp4'
-file 'file:/Users/varunahlawat/Work/GNC_to_moon/GNC_to_the_moon/Package/media/videos/StateVisual/480p15/partial_movie_files/SquareToCircle/624642324_2613896347_3256495558.mp4'
