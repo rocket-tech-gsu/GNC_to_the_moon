@@ -33,3 +33,6 @@
 
 # env
 env
+
+# Flight Data Rendered Videos
+Package/output_videos
