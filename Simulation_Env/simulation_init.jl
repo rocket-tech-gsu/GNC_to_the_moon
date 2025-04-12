@@ -14,12 +14,12 @@ It's a completely configurable environment:
     {
         GPS: {std, refresh_rate, {upperbounds:velocity, acceleration}, Delay},
         Pressure: {std, refresh_rate, Delay},
-
     }
 - Actuator Configuration
   -  
 - Actuator Parameters
 """
+
 using Distributions
 using StaticArrays
 using CSV, DataFrames

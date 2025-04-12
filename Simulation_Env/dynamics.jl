@@ -144,7 +144,7 @@ function Dynamics(rocket::PhysicalParams_Solid, t, state_vector, actuator_state)
     A2 = 1
     A3 = 1
 
-    # A Matrix
+    # A Matrix (TODO: Use SparseArrays)
     A = [1, 0, 0, dt, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
         0, 1, 0, 0, dt, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
         0, 0, 1, 0, 0, dt, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
