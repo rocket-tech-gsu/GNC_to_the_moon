@@ -34,9 +34,9 @@ However there're three parts to it:
     - Higher input weights (R) → Smoother control but worse tracking
     To be fair, the results of this approach are unknown because no one had ever tried it before!
 
-  - On the other hand, imagine a  Actor-Critic model architecture of reinforcement learning could also be used. It
-<br><u>__Note:__</u> Do not confuse them with typical deep/machine learning, there we 
+Deep Learning Basics: 
 
+In this implementation, we chose to use a deep reinforcement learning algorithm called Soft Actor Critic. A main factor that makes soft actor critic special is the use of the -log(P(x)) in it's loss function. In reinforcement learning it is standard that instead of minimizing some function you maximize some function! The function that we want to maximize is denoted as this the Avg of (Q(s_t) - log(a_t)) Despite the sign of this formula, this number for the range of output probabilites of [0-1] scales Higher to Lower, where -log(1)=0 and as you get to a lower probability action, the function. So you can imagine that during our training we store a state tuple within our replay buffer ()
 
 ## Overall Goal:
 Write accurate analytically derived numerical simulation for the system dynamics for accurate dead reckonning in case of abnormal behavior of the state estimation system.
