@@ -8,7 +8,7 @@ Pkg.instantiate()
 
 using CSV, DataFrames
 using Random, Distributions
-include("dynamics.jl")
+include("electric_prop_dynamics.jl")
 # include("simulation_init.jl")
 
 # Read the CSV file into a DataFrame
@@ -17,12 +17,7 @@ df = CSV.File("/Users/varunahlawat/Downloads/Motor_Simulation_data.csv") |> Data
 thrust = df."Thrust(N)"
 # println("THRUST ?",thrust)
 
-m1 = df[!, "Propellant Mass(G1;g)"]
-m2 = df[!, "Propellant Mass(G2;g)"]
-m3 = df[!, "Propellant Mass(G3;g)"]
-mass = ((m1 .+ m2 .+ m3) ./ 1000)
-# println("\nWet Mass(in Kg) Timeseries :\n",mass)
-# println("\n\nWet Thrust(in Kg) Timeseries :\n",thrust)
+
 
 Rocket1 = PhysicalParams_Electric(
     PhysicalParam(true, Float64(1.5)),      # length
@@ -33,16 +28,12 @@ Rocket1 = PhysicalParams_Electric(
     PhysicalParam(true, Float64(1.35)),     # engine_location
     PhysicalParam(true, Float64(0.5)),      # inertia_roll_dry
     PhysicalParam(true, Float64(4.0)),      # inertia_pitch_dry
-    false,                                  # throttle
-    Float64.(mass),                         # mass_engine
-    Float64.(thrust)                        # thrust
+    true,                                   # throttle
+    Float64.(mass)                          # mass_engine
+    # Float64.(thrust)                        # thrust
 )
 
-println("\n\nDry COM Location Physical Param:\n",Rocket1.com_dry)
-println("\n\nThrust Profile Time Series:\n",Rocket1.thrust)
-println("\n\nMoment of Inertia ROLL AXIS (time series):\n",Rocket1.inertia_roll)
-println("\n\nMoment of Inertia Simulated (time series):\n",Rocket1.inertia_pitch)
-println("\n\n YOOO LETS GOOO")
+println()
 
 
 # Usage

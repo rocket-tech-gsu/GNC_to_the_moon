@@ -9,7 +9,7 @@ struct PhysicalParam
     value::Float64
 end
 
-mutable struct PhysicalParams_Solid # Solid Rocket Engine
+mutable struct PhysicalParams_Electric # Solid Rocket Engine
     # Fixed Parameters:
     length::PhysicalParam
     diameter::PhysicalParam
@@ -22,12 +22,11 @@ mutable struct PhysicalParams_Solid # Solid Rocket Engine
     inertia_roll_dry::PhysicalParam
     inertia_pitch_dry::PhysicalParam
     throttle::Bool
-    inertia_roll::Vector{Float64}
-    inertia_pitch::Vector{Float64}  # Dry Rocket About Pitch/Yaw Axis passing through COM(t) 
-    inertia_com_rocket_dry_pitch::Vector{Float64}
-    inertia_engine_rockets_com_pitch::Vector{Float64}
-    mass_engine::Union{Vector{Float64}, Nothing} # Will come from Engine Profile
-    r_prop_com::Union{PhysicalParam, Nothing}
+    inertia_roll::Float64
+    inertia_pitch::Float64  # Dry Rocket About Pitch/Yaw Axis passing through COM(t) 
+    inertia_com_rocket_dry_pitch::Float64
+    inertia_engine_rockets_com_pitch::Float64
+    mass_engine::Union{Float64, Nothing} # Will come from Engine Profile
     thrust::Union{Vector{Float64}, Nothing}
     
     # Solid Propellant Variables
@@ -36,7 +35,7 @@ mutable struct PhysicalParams_Solid # Solid Rocket Engine
     prop_grain_length::Union{Float64, Nothing}
     prop_grain_density::Union{Float64, Nothing}
 
-    function PhysicalParams_Solid(
+    function PhysicalParams_Electric(
         length::PhysicalParam,
         diameter::PhysicalParam,
         cop::PhysicalParam,
@@ -46,16 +45,12 @@ mutable struct PhysicalParams_Solid # Solid Rocket Engine
         inertia_roll_dry::PhysicalParam,
         inertia_pitch_dry::PhysicalParam,
         throttle::Bool,
-        mass_engine::Union{Vector{Float64}, Nothing} = nothing,
-        thrust::Union{Vector{Float64}, Nothing} = nothing,
-        prop_grain_inner_dia::Union{PhysicalParam, Nothing} = nothing, 
-        prop_grain_outer_dia::Union{PhysicalParam, Nothing} = nothing,
-        prop_grain_length::Union{Float64, Nothing} = nothing,
-        prop_grain_density::Union{Float64, Nothing} = nothing,
-        inertia_com_pitch
+        mass_engine::Union{Float64, Nothing} = nothing,
+        thrust::Union{Vector{Float64}, Nothing} = nothing
     )
         if throttle == true
             thrust = 0
+            println("... Throttling Activated ...")
         else
             if isnothing(thrust)
                 println("Populate Thrust Profile!")
@@ -67,15 +62,15 @@ mutable struct PhysicalParams_Solid # Solid Rocket Engine
         
         # Dynamically Calculating COM, Moment of Inertias:
         # Vector operations need dots
-        com = (engine_location.value) .* ((mass_engine) ./ (mass_engine .+ (mass_rocket_dry.value)))
+        com = (engine_location.value) * ((mass_engine) / (mass_engine + (mass_rocket_dry.value)))
         
         # Roll Inertia:
-        inertia_roll = (inertia_roll_dry.value) .+ ((mass_engine) .* (r_prop_com.value * r_prop_com.value))
+        inertia_roll = (inertia_roll_dry.value) + ((mass_engine) * (r_prop_com.value * r_prop_com.value))
         
         # Rocket's Pitch/Yaw Inertia:
-        inertia_com_rocket_dry_pitch = (inertia_pitch_dry.value) .+ (mass_rocket_dry.value .* ((engine_location.value .* (mass_engine ./ (mass_rocket_dry.value .+ mass_engine))).^2)) # about the new com pitch axis
-        inertia_engine_rockets_com_pitch = (engine_location.value^2) .* (mass_engine .* (mass_rocket_dry.value./(mass_rocket_dry.value .+ mass_engine)).^2)
-        inertia_pitch = inertia_com_rocket_dry_pitch .+ inertia_engine_rockets_com_pitch    # Parallel Axis Theorem -> Accounting for shifting COM axis.
+        inertia_com_rocket_dry_pitch = (inertia_pitch_dry.value) + (mass_rocket_dry.value * ((engine_location.value * (mass_engine / (mass_rocket_dry.value + mass_engine)))^2)) # about the new com pitch axis
+        inertia_engine_rockets_com_pitch = (engine_location.value^2) * (mass_engine * (mass_rocket_dry.value/(mass_rocket_dry.value + mass_engine))^2)
+        inertia_pitch = inertia_com_rocket_dry_pitch + inertia_engine_rockets_com_pitch    # Parallel Axis Theorem -> Accounting for shifting COM axis.
         
         # Engine's Pitch/Yaw Inertia:
             # prop_grain_inner_dia
@@ -101,8 +96,8 @@ mutable struct PhysicalParams_Solid # Solid Rocket Engine
             inertia_com_rocket_dry_pitch,
             inertia_engine_rockets_com_pitch,
             mass_engine,
-            r_prop_com,
-            thrust
+            r_prop_com
+            # thrust
         )
     end
 end
@@ -138,7 +133,7 @@ function safe_divide(numerator, denominator; tol=1e-15)
     return numerator / denominator
 end
 
-function Dynamics(rocket::PhysicalParams_Solid, t, state_vector, actuator_state)
+function Electric_prop_dynamics(rocket::PhysicalParams_Electric, t, state_vector, actuator_state)
     """
     For a given rocket data object, state vector, actuator state, time t this function simulates, returns the rocket's state vector at t+1 step.
     """
@@ -155,16 +150,13 @@ function Dynamics(rocket::PhysicalParams_Solid, t, state_vector, actuator_state)
                                 state_vector[11], 
                                 state_vector[12])
 
-    F_aerodynamics = 
+    # CFD LookUp Table Aerodynamics
+    # F_aerodynamics = 
 
     # Linear Accelerations:
     a1 = thrust_vec_U[0]
     a2 = thrust_vec_U[1]
     a3 = thrust_vec_U[2] + g
-    
-    # TODO: Compute Engine's Pitch Axis Moment of Inertia from Roll Aixs' moment of inertia
-    inertia_roll = rocket.inertia_engine_rockets_com_pitch
-    inertia_pitch = 
     
     # Angular Momentum Conservation Angular Velocity Correction:
     W_r = I_ratio .* R2U_rotation()
@@ -202,13 +194,13 @@ function Dynamics(rocket::PhysicalParams_Solid, t, state_vector, actuator_state)
     )
     tmp_state = A * state_vector
 
-    tmp_state[6] = 
-    tmp_state[7]
-    tmp_state[8]
+    tmp_state[6] = a1
+    tmp_state[7] = a2
+    tmp_state[8] = a3
 
-    tmp_state[end-2] = 
-    tmp_state[end-1]
-    tmp_state[end]
+    tmp_state[end-2] = A1
+    tmp_state[end-1] = A2
+    tmp_state[end] = A3
     return (tmp_state)
 
 end
