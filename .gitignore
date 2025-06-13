@@ -33,3 +33,7 @@
 
 # env
 env
+
+# SAC
+*/logs
+*/sac_lunar_tensorboard
